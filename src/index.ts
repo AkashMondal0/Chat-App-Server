@@ -10,7 +10,7 @@ import morgan from 'morgan';
 import typeDefs from './graphql/typeDefs';
 import resolvers from './graphql/resolvers';
 import connection from './db/connection';
-import userRouter from './express-routes/user';
+import userRouter from './routes';
 
 env.config();
 
@@ -37,6 +37,8 @@ const startServer = async () => {
 
 
     app.use("/graphql", expressMiddleware(server));
+    // get routes middleware from express
+    
     app.use("/user", userRouter);
     
     app.listen({ port: 4000 }, () => {
