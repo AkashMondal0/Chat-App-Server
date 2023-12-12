@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
+import { PrivateMessage } from "../types";
 
-const PrivateSchema = new mongoose.Schema({
+const PrivateSchema = new mongoose.Schema<PrivateMessage>({
     content: {
         type: String,
         required: true,

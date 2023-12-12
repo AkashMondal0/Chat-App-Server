@@ -1,11 +1,7 @@
 import mongoose from "mongoose";
+import { GroupChat } from "../types";
 
-const GroupSchema = new mongoose.Schema({
-    id: {
-        type: String,
-        required: true,
-        unique: true,
-    },
+const GroupSchema = new mongoose.Schema<GroupChat>({
     name: {
         type: String,
         max: 50,
@@ -45,11 +41,6 @@ const GroupSchema = new mongoose.Schema({
         type: Array,
         ref: "Group-Message",
         default: []
-    },
-    messageCount: {
-        type: Number,
-        index: true,
-        required: true,
     },
 }, { timestamps: true });
 

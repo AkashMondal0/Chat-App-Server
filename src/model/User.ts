@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import PrivateSchema from './Private-Conversation';
+import { User } from '../types';
 
-const UserSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema<User>({
     username: {
         type: String,
         required: true,

@@ -1,12 +1,8 @@
 import mongoose from "mongoose";
+import { PrivateChat } from "../types";
 
-const PrivateSchema = new mongoose.Schema({
-    id: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    user:{
+const PrivateSchema = new mongoose.Schema<PrivateChat>({
+    users:{
         type: mongoose.Schema.Types.Array,
         ref: "User",
         default: []
@@ -19,12 +15,7 @@ const PrivateSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.Array,
         ref: "Private-Message",
         default: []
-    },
-    messageCount: {
-        type: Number,
-        index: true,
-        required: true,
-    },
+    }
 }, { timestamps: true });
 
 

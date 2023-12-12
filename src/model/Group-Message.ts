@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 
-const PrivateSchema = new mongoose.Schema({
-
+const GroupSchema = new mongoose.Schema({
     content: {
         type: String,
         required: true,
@@ -60,4 +59,4 @@ const PrivateSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 
-export default mongoose.model("Group-Message", PrivateSchema);
+export default mongoose.model("Group-Message", GroupSchema);
