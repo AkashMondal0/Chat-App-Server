@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 dotenv.config();
 
-const connection = mongoose.connect(process.env.MONGODB_URI as string, {
+const mongodbConnection = mongoose.connect(process.env.MONGODB_URI as string, {
     // @ts-ignore
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -13,4 +14,4 @@ const connection = mongoose.connect(process.env.MONGODB_URI as string, {
         process.exit(1);
     });
 
-export default connection;
+export default mongodbConnection;

@@ -9,7 +9,7 @@ import morgan from 'morgan';
 
 import typeDefs from './graphql/typeDefs';
 import resolvers from './graphql/resolvers';
-import connection from './db/connection';
+import mongodbConnection from './db/mongo-connection';
 import userRouter from './routes/user';
 import privateChatRouter from './routes/private';
 
@@ -33,7 +33,7 @@ const startServer = async () => {
     },
   }));
   app.use(morgan('common'));
-  await connection
+  await mongodbConnection
   await server.start();
 
 
