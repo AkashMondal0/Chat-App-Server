@@ -12,6 +12,7 @@ import resolvers from './graphql/resolvers';
 import mongodbConnection from './db/mongo-connection';
 import userRouter from './routes/user';
 import privateChatRouter from './routes/private';
+import AuthRouter from './routes/auth';
 
 env.config();
 
@@ -41,6 +42,7 @@ const startServer = async () => {
 
   app.use("/user", userRouter);
   app.use("/private", privateChatRouter);
+  app.use("/auth", AuthRouter)
 
 
   app.listen({ port: 4000 }, () => {

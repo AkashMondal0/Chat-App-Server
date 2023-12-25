@@ -28,5 +28,18 @@ userRouter.post("/create", ValidateMiddleware(zodUserSchema), async (req, res) =
     }
 })
 
-
+userRouter.get("/search/:userKeyword", async (req, res) => {
+    try {
+        const searchUsers = await User.find({
+            $or: [
+                { username: { $regex: req.params.userKeyword, $options: "i" } },
+                { email: { $regex: req.params.userKeyword, $options: "i" } },
+            ],
+        }).limit(18).sort({ username: 1 }).select({ username: 1, email: 1 })
+        res.status(200).json(searchUsers)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: error })
+    }
+})
 export default userRouter
