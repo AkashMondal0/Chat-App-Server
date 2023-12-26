@@ -44,6 +44,10 @@ const startServer = async () => {
   app.use("/private", privateChatRouter);
   app.use("/auth", AuthRouter)
 
+  app.get('/', (req, res) => {
+    res.send('react android chat server')
+  })
+
 
   app.listen({ port: 4000 }, () => {
     console.log(`🚀 Server ready at http://localhost:4000`)

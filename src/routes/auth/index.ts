@@ -5,16 +5,15 @@ import ValidateMiddleware from "../../middleware/validate-middleware"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import zodUserSchema from "../../validator/user-validator"
-import { zodLoginSchema } from "../../validator/auth-validator"
 const secret = process.env.JWT_SECRET
 const AuthRouter = express.Router()
 const saltRounds = 10
 
-// const login_token = req.headers['authorization'];
-
-AuthRouter.get("/login", ValidateMiddleware(zodLoginSchema), async (req, res) => {
+AuthRouter.get("/login", async (req, res) => {
     try {
-        const { email, password } = req.body
+        const email = req.headers['email'] as string;
+        const password = req.headers['password'] as string;
+
         if (!email && !password) {
             return res.status(400).json({ message: "email and password is required" })
         }
@@ -87,7 +86,7 @@ AuthRouter.get("/authorization", async (req, res) => {
 
         const user = await User.findById(verify.id)
 
-        return res.status(200).json({ user })
+        return res.status(200).json(user)
     } catch (error: any) {
         console.log(error)
         return res.status(500).json({ message: error.message })
