@@ -17,4 +17,17 @@ userRouter.get("/search/:userKeyword", async (req, res) => {
         res.status(500).json({ message: error })
     }
 })
+
+userRouter.post("/users", async (req, res) => {
+    try {
+        const { users } = req.body as { users: string[] }
+        const privateChatList = await User.find({ _id: { $in: users } })
+        res.status(200).json(privateChatList)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: error })
+    }
+})
+
+
 export default userRouter

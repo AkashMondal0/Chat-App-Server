@@ -6,9 +6,9 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import zodUserSchema from "../../validator/user-validator"
 const secret = process.env.JWT_SECRET
-const AuthRouter = express.Router()
 const saltRounds = 10
 
+const AuthRouter = express.Router()
 AuthRouter.get("/login", async (req, res) => {
     try {
         const email = req.headers['email'] as string;
