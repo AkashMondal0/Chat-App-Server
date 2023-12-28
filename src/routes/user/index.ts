@@ -1,5 +1,7 @@
 import express from "express"
 import User from "../../model/User"
+import redisConnection from "../../db/redis-connection"
+
 
 const userRouter = express.Router()
 
@@ -20,9 +22,28 @@ userRouter.get("/search/:userKeyword", async (req, res) => {
 
 userRouter.post("/users", async (req, res) => {
     try {
-        const { users } = req.body as { users: string[] }
-        const privateChatList = await User.find({ _id: { $in: users } })
-        res.status(200).json(privateChatList)
+        // authorId:usersList key value
+        const { users, authorId } = req.body as { users: string[], authorId: string }
+        const caching = await redisConnection.get(authorId)
+
+        const newQuery = async () => {
+            const privateChatList = await User.find({ _id: { $in: users } })
+            await redisConnection.set(authorId, JSON.stringify(privateChatList), "EX", 60 * 60 * 24 * 1)
+            res.status(200).json(privateChatList)
+        }
+
+        if (caching) {
+            const caching2 = JSON.parse(caching)
+
+            if (caching2.length === users.length) {
+                console.log("cache hit")
+                return res.status(200).json(caching2)
+            } else {
+                newQuery()
+            }
+        } else {
+            newQuery()
+        }
     } catch (error) {
         console.log(error)
         res.status(500).json({ message: error })
