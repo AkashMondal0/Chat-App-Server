@@ -5,6 +5,7 @@ import ValidateMiddleware from "../../middleware/validate-middleware"
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 import zodUserSchema from "../../validator/user-validator"
+import redisConnection from "../../db/redis-connection"
 const secret = process.env.JWT_SECRET
 const saltRounds = 10
 
@@ -84,6 +85,11 @@ AuthRouter.get("/authorization", async (req, res) => {
             return res.status(404).json({ message: "Invalid token" })
         }
 
+        const authorIdKey = `userData:${verify?.id}`
+        const caching = await redisConnection.get(authorIdKey)
+        if (caching) {
+            return res.status(200).json(JSON.parse(caching))
+        }
         const user = await User.findById(verify.id)
 
         return res.status(200).json(user)

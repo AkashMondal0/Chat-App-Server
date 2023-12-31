@@ -22,13 +22,14 @@ userRouter.get("/search/:userKeyword", async (req, res) => {
 
 userRouter.post("/users", async (req, res) => {
     try {
-        // authorId:usersList key value
+        // usersList:authorId key value
         const { users, authorId } = req.body as { users: string[], authorId: string }
-        const caching = await redisConnection.get(authorId)
+        const authorIdKey = `userList:${authorId}`
+        const caching = await redisConnection.get(authorIdKey)
 
         const newQuery = async () => {
             const privateChatList = await User.find({ _id: { $in: users } })
-            await redisConnection.set(authorId, JSON.stringify(privateChatList), "EX", 60 * 60 * 24 * 1)
+            await redisConnection.set(authorIdKey, JSON.stringify(privateChatList), "EX", 60 * 60 * 24 * 1)
             res.status(200).json(privateChatList)
         }
 
@@ -36,7 +37,7 @@ userRouter.post("/users", async (req, res) => {
             const caching2 = JSON.parse(caching)
 
             if (caching2.length === users.length) {
-                console.log("cache hit")
+                // console.log("cache hit")
                 return res.status(200).json(caching2)
             } else {
                 newQuery()

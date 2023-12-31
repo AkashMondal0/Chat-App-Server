@@ -2,19 +2,16 @@ import express from "express"
 import PrivateConversation from "../../../model/Private-Conversation"
 const PrivateChatMessageRoute = express.Router()
 
-PrivateChatMessageRoute.post("/chat/message/:id", async (req, res) => {
+PrivateChatMessageRoute.post("/message/:id", async (req, res) => {
     try {
         const _id = req.params.id
+        const { messages } = req.body
         const privateChatList = await PrivateConversation.updateOne({ _id }, {
             $set: {
-                lastMessageContent: "test update",
+                lastMessageContent: messages.content,
             },
             $push: {
-                messages: {
-                    sender: "test sender",
-                    content: "test content",
-                    createdAt: new Date(),
-                }
+                messages
             }
         })
         res.status(200).json(privateChatList)
