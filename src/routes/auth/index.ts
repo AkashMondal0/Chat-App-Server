@@ -18,21 +18,41 @@ AuthRouter.get("/login", async (req, res) => {
         if (!email && !password) {
             return res.status(400).json({ message: "email and password is required" })
         }
-        const db_user = await User.findOne({ email: email })
 
-        if (!db_user) {
-            return res.status(401).json({ message: "email not found" })
+        const authorEmailKey = `userLogin:${email}`
+        const caching = await redisConnection.get(authorEmailKey)
+
+        if (caching) {
+            console.log("login cache")
+            const data = JSON.parse(caching)
+            const checkPassword = await bcrypt.compare(password, data.password)
+
+            if (!checkPassword) {
+                return res.status(401).json({ message: "invalid credential" })
+            }
+
+            return res.status(200).json({ token: data.token })
+        } else {
+            const db_user = await User.findOne({ email: email })
+            if (!db_user) {
+                return res.status(401).json({ message: "email not found" })
+            }
+            const checkPassword = await bcrypt.compare(password, db_user.password)
+
+            if (!checkPassword) {
+                return res.status(401).json({ message: "invalid credential" })
+            }
+
+            const token = jwt.sign({ email: db_user.email, id: db_user._id }, secret as string)
+
+            await redisConnection.set(authorEmailKey, JSON.stringify({
+                email: email,
+                token: token,
+                password: db_user.password,
+                userData: db_user
+            }), "EX", 60 * 60 * 24 * 1)
+            return res.status(200).json({ token })
         }
-
-        const checkPassword = await bcrypt.compare(password, db_user.password)
-
-        if (!checkPassword) {
-            return res.status(401).json({ message: "invalid credential" })
-        }
-
-        const token = jwt.sign({ id: db_user.id }, secret as string)
-
-        return res.status(200).json({ token })
     } catch (error: any) {
         console.log(error)
         return res.status(500).json({ message: error?.message })
@@ -61,9 +81,14 @@ AuthRouter.post("/register", ValidateMiddleware(zodUserSchema), async (req, res)
             password: hash,
             username: data.username,
         })
-
-        const token = jwt.sign({ id: newUser.id }, secret as string)
-
+        const authorEmailKey = `userLogin:${newUser.email}`
+        const token = jwt.sign({ email: newUser.email, id: newUser._id }, secret as string)
+        await redisConnection.set(authorEmailKey, JSON.stringify({
+            email: newUser.email,
+            token: token,
+            password: newUser.password,
+            userData: newUser,
+        }), "EX", 60 * 60 * 24 * 1)
         return res.status(200).json({ token })
     } catch (error) {
         console.log(error)
@@ -79,20 +104,24 @@ AuthRouter.get("/authorization", async (req, res) => {
             return res.status(404).json({ message: "Token not found" })
         }
 
-        const verify = jwt.verify(token, secret as string) as { id: string };
+        const verify = jwt.verify(token, secret as string) as { email: string };
 
-        if (!verify?.id) {
+        // console.log(verify)
+        if (!verify?.email) {
             return res.status(404).json({ message: "Invalid token" })
         }
 
-        const authorIdKey = `userData:${verify?.id}`
+        const authorIdKey = `userLogin:${verify?.email}`
         const caching = await redisConnection.get(authorIdKey)
         if (caching) {
-            return res.status(200).json(JSON.parse(caching))
+            console.log("authorization cache")
+            return res.status(200).json(JSON.parse(caching).userData)
         }
-        const user = await User.findById(verify.id)
-
-        return res.status(200).json(user)
+        // else {
+        //     const user = await User.find({ email: verify.email })
+        //     await redisConnection.set(authorIdKey, JSON.stringify(user), "EX", 60 * 60 * 24 * 1)
+        //     return res.status(200).json(user)
+        // }
     } catch (error: any) {
         console.log(error)
         return res.status(500).json({ message: error.message })

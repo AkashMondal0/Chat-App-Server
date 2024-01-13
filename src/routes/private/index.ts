@@ -1,6 +1,6 @@
 import express from "express"
 import PrivateConversation from "../../model/Private-Conversation"
-import redisConnection from "../../db/redis-connection"
+// import redisConnection from "../../db/redis-connection"
 import jwt from "jsonwebtoken"
 const secret = process.env.JWT_SECRET
 const privateChatRouter = express.Router()
@@ -35,15 +35,17 @@ privateChatRouter.get("/chat/list", async (req, res) => {
         const token = req.headers["token"] as string
         const { id: userId } = jwt.verify(token, secret as string) as { id: string };
 
-        const redis_db_cache = await redisConnection.get(userId)
+        // const authorIdKey = `privateChatList:${userId}`
+        // const redis_db_cache = await redisConnection.get(authorIdKey)
 
-        if (redis_db_cache) {
-            res.status(200).json(JSON.parse(redis_db_cache))
-        } else {
-            const privateChatList = await PrivateConversation.find({ users: { $in: [userId] } })
-            redisConnection.set(userId, JSON.stringify(privateChatList), "EX", 10)
-            res.status(200).json(privateChatList)
-        }
+        // if (redis_db_cache) {
+        //     console.log("caching chat list")
+        //     res.status(200).json(JSON.parse(redis_db_cache))
+        // } else {
+        // }
+        const privateChatList = await PrivateConversation.find({ users: { $in: [userId] } })
+        // redisConnection.set(authorIdKey, JSON.stringify(privateChatList), "EX", 60 * 60 * 24 * 1)
+        res.status(200).json(privateChatList)
 
     } catch (error) {
         console.log(error)

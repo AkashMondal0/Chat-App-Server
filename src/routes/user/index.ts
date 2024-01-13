@@ -26,18 +26,18 @@ userRouter.post("/users", async (req, res) => {
         const { users, authorId } = req.body as { users: string[], authorId: string }
         const authorIdKey = `userList:${authorId}`
         const caching = await redisConnection.get(authorIdKey)
-
+        
         const newQuery = async () => {
             const privateChatList = await User.find({ _id: { $in: users } })
             await redisConnection.set(authorIdKey, JSON.stringify(privateChatList), "EX", 60 * 60 * 24 * 1)
             res.status(200).json(privateChatList)
         }
-
+        
         if (caching) {
             const caching2 = JSON.parse(caching)
-
+            
             if (caching2.length === users.length) {
-                // console.log("cache hit")
+                console.log("caching user list")
                 return res.status(200).json(caching2)
             } else {
                 newQuery()

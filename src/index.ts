@@ -84,8 +84,6 @@ socketIO.on('connection', (socket) => {
   socket.on('message_for_user', (_data) => {
     const { receiverId, senderId } = _data;
     socket.join(receiverId);
-    // socket.join(senderId);
-    // socketIO.to(senderId).emit('message_for_user', data);
     socketIO.to(receiverId).emit('message_for_user', _data);
   });
 
@@ -93,7 +91,6 @@ socketIO.on('connection', (socket) => {
     const { receiverId } = _data;
     socket.join(receiverId);
     socketIO.to(receiverId).emit('message_for_user_seen', _data);
-    // console.log('message_for_user seen')
 
   });
 
@@ -110,7 +107,6 @@ socketIO.on('connection', (socket) => {
   });
 
   socket.on('group_message_for_user', (group) => {
-    // console.log(group)
     socket.join(group.id);
     socketIO.to(group.id).emit('group_message_for_user', group.data);
   });
@@ -133,10 +129,6 @@ socketIO.on('connection', (socket) => {
 
     socketIO.to(senderId).emit('group_chat_list', data);
   });
-
-  // socket.on('disconnect', (user) => {
-  //   console.log('user disconnected',user);
-  // });
 
 });
 
