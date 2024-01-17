@@ -117,11 +117,11 @@ AuthRouter.get("/authorization", async (req, res) => {
             console.log("authorization cache")
             return res.status(200).json(JSON.parse(caching).userData)
         }
-        // else {
-        //     const user = await User.find({ email: verify.email })
-        //     await redisConnection.set(authorIdKey, JSON.stringify(user), "EX", 60 * 60 * 24 * 1)
-        //     return res.status(200).json(user)
-        // }
+        else {
+            const user = await User.find({ email: verify.email })
+            await redisConnection.set(authorIdKey, JSON.stringify(user), "EX", 60 * 60 * 24 * 1)
+            return res.status(200).json(user)
+        }
     } catch (error: any) {
         console.log(error)
         return res.status(500).json({ message: error.message })

@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc -p .",
-    "start": "npm run compile && node ./dist/index.js",
+    "start": "tsc -p . && node ./build/index.js",
     "dev": "nodemon src/index.ts"
   },
   "keywords": [],
@@ -25,6 +25,7 @@
     "dotenv": "^16.3.1",
     "graphql": "^16.8.1",
     "helmet": "^7.1.0",
+    "i": "^0.3.7",
     "ioredis": "^5.3.2",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.3",

@@ -15,6 +15,7 @@ import userRouter from './routes/user';
 import privateChatRouter from './routes/private';
 import AuthRouter from './routes/auth';
 import PrivateChatMessageRoute from './routes/private/chat';
+import redisConnection from './db/redis-connection';
 
 env.config();
 
@@ -54,51 +55,42 @@ app.use("/auth", AuthRouter)
 app.use("/PrivateChat", PrivateChatMessageRoute)
 
 app.get('/', (req, res) => {
-  res.send('react android chat server')
+  res.send('react android chat server redis and mongo socket v1.0.0')
 })
 
-socketIO.on('connection', (socket) => {
+// redis pub/sub
+const pub = redisConnection
+const sub = redisConnection.duplicate()
 
+sub.subscribe("message")
+sub.subscribe("message_seen")
+sub.subscribe("message_typing")
+sub.subscribe("update_Chat_List")
+
+socketIO.on('connection', (socket) => {
   // user --------------------------------------
+
   socket.on('user_connect', (user) => {
     socket.join(user.id);
-    console.log('user connected', user)
-  });
-
-  socket.on('user_disconnect', (user) => {
-    // console.log('user disconnected', user)
-    socket.leave(user.id);
   });
 
   // user chat list -------------------------------
-  socket.on('user_chat_list', (_data) => {
-    const { receiverId, senderId, data } = _data;
-
-    socket.join(receiverId);
-    socket.join(senderId);
-    socketIO.to(senderId).emit('user_chat_list', data);
-    socketIO.to(receiverId).emit('user_chat_list', data);
+  socket.on('update_Chat_List_Sender', async (_data) => {
+    await pub.publish("update_Chat_List", JSON.stringify(_data));
   });
 
   // message --------------------------------------
-  socket.on('message_for_user', (_data) => {
-    const { receiverId, senderId } = _data;
-    socket.join(receiverId);
-    socketIO.to(receiverId).emit('message_for_user', _data);
+  socket.on('message_sender', async (_data) => {
+    await pub.publish("message", JSON.stringify(_data));
   });
 
-  socket.on('message_for_user_seen', (_data) => {
-    const { receiverId } = _data;
-    socket.join(receiverId);
-    socketIO.to(receiverId).emit('message_for_user_seen', _data);
-
+  socket.on('message_seen_sender', async (_data) => {
+    await pub.publish("message_seen", JSON.stringify(_data));
   });
 
   // typing --------------------------------------
-  socket.on('_typing', (_data) => {
-    const { receiverId, senderId, conversationId, typing } = _data;
-    socket.join(receiverId);
-    socketIO.to(receiverId).emit('_typing', _data);
+  socket.on('message_typing_sender', async (_data) => {
+    await pub.publish("message_typing", JSON.stringify(_data));
   });
 
   // group --------------------------------------
@@ -131,6 +123,33 @@ socketIO.on('connection', (socket) => {
   });
 
 });
+
+
+sub.on("message", (channel, message) => {
+  if (channel === "message") {
+    const { receiverId } = JSON.parse(message)
+    socketIO.to(receiverId).emit('message_receiver', JSON.parse(message));
+  }
+  else if (channel === "message_seen") {
+    const { receiverId } = JSON.parse(message)
+    socketIO.to(receiverId).emit('message_seen_receiver', JSON.parse(message));
+  }
+  else if (channel === "message_typing") {
+    const { receiverId } = JSON.parse(message)
+    socketIO.to(receiverId).emit('message_typing_receiver', JSON.parse(message));
+  }
+  else if (channel === "update_Chat_List") {
+    const { receiverId ,senderId} = JSON.parse(message)
+    socketIO.to(receiverId).emit('update_Chat_List_Receiver', JSON.parse(message));
+    socketIO.to(senderId).emit('update_Chat_List_Receiver', JSON.parse(message));
+  }
+
+  else if (channel === "message_typing_sender") {
+    const { receiverId } = JSON.parse(message)
+    socketIO.to(receiverId).emit('message_typing_receiver', JSON.parse(message));
+  }
+})
+
 
 
 httpServer.listen({ port: 4000 }, () => {
