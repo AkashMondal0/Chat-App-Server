@@ -3,7 +3,7 @@ import express from "express"
 import User from "../../model/User"
 import ValidateMiddleware from "../../middleware/validate-middleware"
 import jwt from "jsonwebtoken"
-import bcrypt from "bcrypt"
+import bcrypt from "bcryptjs"
 import zodUserSchema from "../../validator/user-validator"
 import redisConnection from "../../db/redis-connection"
 const secret = process.env.JWT_SECRET
@@ -30,8 +30,8 @@ AuthRouter.get("/login", async (req, res) => {
             if (!checkPassword) {
                 return res.status(401).json({ message: "invalid credential" })
             }
-
-            return res.status(200).json({ token: data.token })
+            const token = jwt.sign({ email: data.email, id: data._id }, secret as string)
+            return res.status(200).json({ token })
         } else {
             const db_user = await User.findOne({ email: email })
             if (!db_user) {
@@ -45,12 +45,7 @@ AuthRouter.get("/login", async (req, res) => {
 
             const token = jwt.sign({ email: db_user.email, id: db_user._id }, secret as string)
 
-            await redisConnection.set(authorEmailKey, JSON.stringify({
-                email: email,
-                token: token,
-                password: db_user.password,
-                userData: db_user
-            }), "EX", 60 * 60 * 24 * 1)
+            await redisConnection.set(authorEmailKey, JSON.stringify(db_user), "EX", 60 * 60 * 24 * 1)
             return res.status(200).json({ token })
         }
     } catch (error: any) {
@@ -83,12 +78,7 @@ AuthRouter.post("/register", ValidateMiddleware(zodUserSchema), async (req, res)
         })
         const authorEmailKey = `userLogin:${newUser.email}`
         const token = jwt.sign({ email: newUser.email, id: newUser._id }, secret as string)
-        await redisConnection.set(authorEmailKey, JSON.stringify({
-            email: newUser.email,
-            token: token,
-            password: newUser.password,
-            userData: newUser,
-        }), "EX", 60 * 60 * 24 * 1)
+        await redisConnection.set(authorEmailKey, JSON.stringify(newUser), "EX", 60 * 60 * 24 * 1)
         return res.status(200).json({ token })
     } catch (error) {
         console.log(error)
@@ -115,7 +105,7 @@ AuthRouter.get("/authorization", async (req, res) => {
         const caching = await redisConnection.get(authorIdKey)
         if (caching) {
             console.log("authorization cache")
-            return res.status(200).json(JSON.parse(caching).userData)
+            return res.status(200).json(JSON.parse(caching))
         }
         else {
             const user = await User.find({ email: verify.email })
