@@ -96,7 +96,6 @@ AuthRouter.get("/authorization", async (req, res) => {
 
         const verify = jwt.verify(token, secret as string) as { email: string };
 
-        // console.log(verify)
         if (!verify?.email) {
             return res.status(404).json({ message: "Invalid token" })
         }
@@ -108,7 +107,8 @@ AuthRouter.get("/authorization", async (req, res) => {
             return res.status(200).json(JSON.parse(caching))
         }
         else {
-            const user = await User.find({ email: verify.email })
+            const user = await User.findOne({ email: verify.email })
+            // console.log(user)
             await redisConnection.set(authorIdKey, JSON.stringify(user), "EX", 60 * 60 * 24 * 1)
             return res.status(200).json(user)
         }
