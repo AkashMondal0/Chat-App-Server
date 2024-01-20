@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import express from "express"
 import PrivateConversation from "../../model/Private-Conversation"
 // import redisConnection from "../../db/redis-connection"
@@ -37,13 +38,15 @@ privateChatRouter.get("/chat/list", async (req, res) => {
         const { id: userId } = jwt.verify(token, secret as string) as { id: string };
 
         const privateChatList = await PrivateConversation.find({ users: { $in: [userId] } })
-            
+
         const privateChatListWithLastMessage = await Promise.all(privateChatList.map(async (chat) => {
             chat.messages = await PrivateMessage.find({ conversationId: chat._id })
-            // .sort({ createdAt: -1 })
-            .limit(20)
-            chat.lastMessageContent = chat?.messages.length > 0 ? chat?.messages[chat?.messages.length -1]?.content : chat.lastMessageContent
-            chat.updatedAt = chat?.messages.length > 0 ? chat?.messages[chat?.messages.length -1]?.createdAt : chat.updatedAt
+                .sort({
+                    createdAt: -1
+                })
+                .limit(20).exec()
+            chat.lastMessageContent = chat?.messages.length > 0 ? chat?.messages[0]?.content : chat.lastMessageContent
+            chat.updatedAt = chat?.messages.length > 0 ? chat?.messages[chat?.messages.length - 1]?.createdAt : chat.updatedAt
 
             return chat
         }))
@@ -55,5 +58,24 @@ privateChatRouter.get("/chat/list", async (req, res) => {
     }
 })
 
+privateChatRouter.get("/chat/list/messages/:id", async (req, res) => {
+    try {
+        // url example: http://localhost:5000/api/private/chat/list/messages?page=1&size=10
+        const conversationId = req.params.id
+        const page = parseInt(req.query.page as any) || 1; // default to page 1
+        const size = parseInt(req.query.size as any) || 15; // default to 10 items per page
+
+        console.log(conversationId, page, size)
+        const getMoreMessage = await PrivateMessage.find({ conversationId }).sort({
+            createdAt: -1
+        })
+            .skip((page - 1) * size)
+            .limit(size).exec()
+        res.status(200).json(getMoreMessage)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Server Error Please Try Again" })
+    }
+})
 
 export default privateChatRouter
