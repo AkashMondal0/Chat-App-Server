@@ -1,7 +1,8 @@
 import express from "express"
-import PrivateConversation from "../../../model/Private-Conversation"
+import PrivateMessage from "../../../model/Private-Message";
+import { User } from "../../../types";
 const PrivateChatMessageRoute = express.Router()
-interface PrivateMessageSeen {
+export interface PrivateMessageSeen {
     messageIds: string[];
     memberId: string;
     receiverId: string;
@@ -9,49 +10,59 @@ interface PrivateMessageSeen {
     createdAt?: string;
     updatedAt?: string;
 }
-PrivateChatMessageRoute.post("/message/:id", async (req, res) => {
-    try {
-        const _id = req.params.id
-        const { messages } = req.body
-        const privateChatList = await PrivateConversation.updateOne({ _id }, {
-            $set: {
-                lastMessageContent: messages.content,
-            },
-            $push: {
-                messages
-            }
-        })
-        res.status(200).json(privateChatList)
-    } catch (error) {
-        console.log(error)
-        res.status(500).json({ message: error })
-    }
-})
-
-
-interface PrivateMessageSeen {
-    messageIds: string[];
+export interface privateMessage {
+    _id?: string;
+    memberDetails?: User;
+    content: string;
+    fileUrl?: File[];
     memberId: string;
+    senderId: string;
     receiverId: string;
     conversationId: string;
-    createdAt?: string;
-    updatedAt?: string;
+    deleted: boolean;
+    seenBy: [User['_id']];
+    deliveredTo?: [User['_id']];
+    createdAt: string | Date;
+    updatedAt: string | Date;
+    replyTo?: {
+        _id: string;
+        content: string;
+        memberId: string;
+        conversationId: string;
+        deleted: boolean;
+        replyContent: privateMessage;
+    };
 }
-PrivateChatMessageRoute.post("/messageSeen/:id", async (req, res) => {
+PrivateChatMessageRoute.post("/send", async (req, res) => {
     try {
-        const _id = req.params.id
-        const { seen } = req.body as { seen: PrivateMessageSeen }
+        // const _id = req.params.id
+        const { message } = req.body as { message: privateMessage } // remove _id from message object
         
-        const privateChatList = await PrivateConversation.updateMany({ _id }, {
-            $push: {
-                "messages.$[].seenBy": seen.memberId
-            },
-        })
 
-        res.status(200).json(privateChatList)
+        const CreateNewMessage = await PrivateMessage.create(message)
+        res.status(200).json(CreateNewMessage)
     } catch (error) {
         console.log(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: "Server Error Please Try Again" })
     }
 })
+
+PrivateChatMessageRoute.post("/seen", async (req, res) => {
+    try {
+        // const _id = req.params.id
+        const { messages } = req.body as { messages: PrivateMessageSeen }
+       const updateMessageSeen = await PrivateMessage.updateMany({ _id: messages.messageIds }, {
+            $push: {
+                seenBy: messages.memberId
+            },
+        })
+        res.status(200).json(updateMessageSeen)
+    } catch (error) {
+        console.log(error)
+        res.status(500).json({ message: "Server Error Please Try Again" })
+    }
+})
+
+
+
 export default PrivateChatMessageRoute

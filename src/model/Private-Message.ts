@@ -1,28 +1,18 @@
 import mongoose from "mongoose";
 import { PrivateMessage } from "../types";
 
-const PrivateSchema = new mongoose.Schema<PrivateMessage>({
+const PrivateMessageSchema = new mongoose.Schema<PrivateMessage>({
+    _id: {
+        type: String,
+        required: true,
+        unique: true,
+    },
     content: {
         type: String,
         required: true,
     },
     fileUrl: {
-        type: [
-            {
-                url: {
-                    type: String,
-                    required: true,
-                },
-                type: {
-                    type: {
-                        type: String,
-                        enum: ["image", "video", "audio", "file"],
-                        required: true,
-                    },
-                    required: true,
-                },
-            }
-        ],
+        type: [String],
         required: false,
         default: [],
     },
@@ -39,24 +29,18 @@ const PrivateSchema = new mongoose.Schema<PrivateMessage>({
         default: false,
     },
     seenBy: {
-        type: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
-            }
-        ],
+        type: [String],
         default: []
     },
     deliveredTo: {
-        type: [
-            {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: "User",
-            }
-        ],
+        type: [String],
         default: []
-    }
+    },
+    createdAt: {
+        type: Date,
+        required: true,
+    },
 }, { timestamps: true });
 
 
-export default mongoose.model("Private-Message", PrivateSchema);
+export default mongoose.model("Private-Message", PrivateMessageSchema);

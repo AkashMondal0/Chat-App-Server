@@ -16,7 +16,7 @@ userRouter.get("/search/:userKeyword", async (req, res) => {
         res.status(200).json(searchUsers)
     } catch (error) {
         console.log(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: "Server Error Please Try Again" })
     }
 })
 
@@ -47,7 +47,7 @@ userRouter.post("/users", async (req, res) => {
         }
     } catch (error) {
         console.log(error)
-        res.status(500).json({ message: error })
+        res.status(500).json({ message: "Server Error Please Try Again" })
     }
 })
 

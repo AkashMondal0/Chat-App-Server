@@ -50,7 +50,7 @@ AuthRouter.get("/login", async (req, res) => {
         }
     } catch (error: any) {
         console.log(error)
-        return res.status(500).json({ message: error?.message })
+        res.status(500).json({ message: "Server Error Please Try Again" })
     }
 })
 
@@ -80,9 +80,9 @@ AuthRouter.post("/register", ValidateMiddleware(zodUserSchema), async (req, res)
         const token = jwt.sign({ email: newUser.email, id: newUser._id }, secret as string)
         await redisConnection.set(authorEmailKey, JSON.stringify(newUser), "EX", 60 * 60 * 24 * 1)
         return res.status(200).json({ token })
-    } catch (error) {
+    } catch (error:any) {
         console.log(error)
-        return res.status(500).json({ message: error })
+        res.status(500).json({ message: "Server Error Please Try Again" })
     }
 })
 
@@ -114,7 +114,7 @@ AuthRouter.get("/authorization", async (req, res) => {
         }
     } catch (error: any) {
         console.log(error)
-        return res.status(500).json({ message: error.message })
+        res.status(500).json({ message: "Server Error Please Try Again" })
     }
 })
 

@@ -16,6 +16,7 @@ import privateChatRouter from './routes/private';
 import AuthRouter from './routes/auth';
 import PrivateChatMessageRoute from './routes/private/chat';
 import redisConnection from './db/redis-connection';
+import { saveMessageInDB, saveMessageSeenInDB } from './controller/privateMessage';
 
 env.config();
 
@@ -52,7 +53,7 @@ mongodbConnection
 app.use("/user", userRouter);
 app.use("/private", privateChatRouter);
 app.use("/auth", AuthRouter)
-app.use("/PrivateChat", PrivateChatMessageRoute)
+app.use("/PrivateMessage", PrivateChatMessageRoute)
 
 app.get('/', (req, res) => {
   res.send('react android chat server redis and mongo socket v1.0.0')
@@ -82,10 +83,12 @@ socketIO.on('connection', (socket) => {
   // message --------------------------------------
   socket.on('message_sender', async (_data) => {
     await pub.publish("message", JSON.stringify(_data));
+    await saveMessageInDB(_data)
   });
 
   socket.on('message_seen_sender', async (_data) => {
     await pub.publish("message_seen", JSON.stringify(_data));
+    await saveMessageSeenInDB(_data)
   });
 
   // typing --------------------------------------
@@ -139,7 +142,7 @@ sub.on("message", (channel, message) => {
     socketIO.to(receiverId).emit('message_typing_receiver', JSON.parse(message));
   }
   else if (channel === "update_Chat_List") {
-    const { receiverId ,senderId} = JSON.parse(message)
+    const { receiverId, senderId } = JSON.parse(message)
     socketIO.to(receiverId).emit('update_Chat_List_Receiver', JSON.parse(message));
     socketIO.to(senderId).emit('update_Chat_List_Receiver', JSON.parse(message));
   }

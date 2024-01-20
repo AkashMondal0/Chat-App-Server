@@ -22,6 +22,7 @@ interface File {
 }
 
 interface PrivateMessage {
+    createdAt: string | undefined;
     _id: string;
     content: string;
     fileUrl?: File[];
