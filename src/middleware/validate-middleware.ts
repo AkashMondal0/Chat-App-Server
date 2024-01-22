@@ -7,7 +7,7 @@ const ValidateMiddleware = (schema: z.Schema) => async (req: any, res: any, next
         req.body = parsedBody;
         next();
     } catch (error: any) {
-        res.status(400).json({ error: error.errors[0].message });
+        res.status(400).json({ message: error.errors[0].message });
     }
 }
 
