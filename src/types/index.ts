@@ -35,11 +35,17 @@ interface PrivateMessage {
 
 interface PrivateChat {
     _id?: string;
-    users?: User[];
+    users?: [
+        User['_id'],
+    ];
+    userDetails?: User;
     lastMessageContent: string;
     messages?: PrivateMessage[];
-    updatedAt?: string;
-    createdAt?: string;
+    updatedAt?: string | Date;
+    createdAt?: string | Date;
+    typing?: boolean;
+    loadAllMessages?: boolean | undefined;
+    page?: number | undefined;
 }
 interface GroupMessage {
     content: string;

@@ -4,6 +4,8 @@ import PrivateConversation from "../../model/Private-Conversation"
 // import redisConnection from "../../db/redis-connection"
 import jwt from "jsonwebtoken"
 import PrivateMessage from "../../model/Private-Message"
+import { findUsers } from "../../controller/user"
+import { User } from "../../types"
 const secret = process.env.JWT_SECRET
 const privateChatRouter = express.Router()
 
@@ -23,7 +25,9 @@ privateChatRouter.post("/chat/connection", async (req, res) => {
 
         const createPrivateChat = await PrivateConversation.create({
             users,
-            lastMessageContent: "add new friend"
+            lastMessageContent: "add new friend",
+            messages: [],
+            userDetails: {}
         })
         res.status(200).json(createPrivateChat)
     } catch (error) {
@@ -32,22 +36,29 @@ privateChatRouter.post("/chat/connection", async (req, res) => {
     }
 })
 
+
 privateChatRouter.get("/chat/list", async (req, res) => {
     try {
         const token = req.headers["token"] as string
         const { id: userId } = jwt.verify(token, secret as string) as { id: string };
 
         const privateChatList = await PrivateConversation.find({ users: { $in: [userId] } })
-
+            .sort({
+                updatedAt: -1
+            })
+            .exec()
+        const findUserIds = privateChatList?.map((item) => item.users?.filter((_userId) => _userId !== userId)[0]) || []
+        // console.log("findUserIds",findUserIds)
+        const usersDetailsList = await findUsers(findUserIds as string[], userId) as User[]
+        // console.log("usersDetailsList", usersDetailsList)
         const privateChatListWithLastMessage = await Promise.all(privateChatList.map(async (chat) => {
+
             chat.messages = await PrivateMessage.find({ conversationId: chat._id })
-                .sort({
-                    createdAt: -1
-                })
+                .sort({ createdAt: -1 })
                 .limit(20).exec()
             chat.lastMessageContent = chat?.messages.length > 0 ? chat?.messages[0]?.content : chat.lastMessageContent
             chat.updatedAt = chat?.messages.length > 0 ? chat?.messages[chat?.messages.length - 1]?.createdAt : chat.updatedAt
-
+            chat.userDetails = usersDetailsList?.find((user) => user._id.toString() === chat.users?.filter((_userId) => _userId !== userId)[0])
             return chat
         }))
 
@@ -65,7 +76,7 @@ privateChatRouter.get("/chat/list/messages/:id", async (req, res) => {
         const page = parseInt(req.query.page as any) || 1; // default to page 1
         const size = parseInt(req.query.size as any) || 15; // default to 10 items per page
 
-        console.log(conversationId, page, size)
+        // console.log(conversationId, page, size)
         const getMoreMessage = await PrivateMessage.find({ conversationId }).sort({
             createdAt: -1
         })

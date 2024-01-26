@@ -4,8 +4,11 @@ import { PrivateChat } from "../types";
 const PrivateSchema = new mongoose.Schema<PrivateChat>({
     users:{
         type: mongoose.Schema.Types.Array,
-        ref: "User",
         default: []
+    },
+    userDetails: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
     },
     lastMessageContent: {
         type: String,
