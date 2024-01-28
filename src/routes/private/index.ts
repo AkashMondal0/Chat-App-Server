@@ -42,17 +42,20 @@ privateChatRouter.get("/chat/list", async (req, res) => {
         const token = req.headers["token"] as string
         const { id: userId } = jwt.verify(token, secret as string) as { id: string };
 
+        // user conversation list
         const privateChatList = await PrivateConversation.find({ users: { $in: [userId] } })
             .sort({
                 updatedAt: -1
             })
             .exec()
-        const findUserIds = privateChatList?.map((item) => item.users?.filter((_userId) => _userId !== userId)[0]) || []
-        // console.log("findUserIds",findUserIds)
-        const usersDetailsList = await findUsers(findUserIds as string[], userId) as User[]
-        // console.log("usersDetailsList", usersDetailsList)
-        const privateChatListWithLastMessage = await Promise.all(privateChatList.map(async (chat) => {
 
+        // user ids list
+        const findUserIds = privateChatList?.map((item) => item.users?.filter((_userId) => _userId !== userId)[0]) || []
+
+        // user details list
+        const usersDetailsList = await findUsers(findUserIds as string[], userId) as User[]
+
+        const privateChatListWithLastMessage = await Promise.all(privateChatList.map(async (chat) => {
             chat.messages = await PrivateMessage.find({ conversationId: chat._id })
                 .sort({ createdAt: -1 })
                 .limit(20).exec()
