@@ -79,8 +79,8 @@ AuthRouter.post("/register", ValidateMiddleware(zodUserSchema), async (req, res)
         const authorEmailKey = `userLogin:${newUser.email}`
         const token = jwt.sign({ email: newUser.email, id: newUser._id }, secret as string)
         await redisConnection.set(authorEmailKey, JSON.stringify(newUser), "EX", 60 * 60 * 24 * 1)
-        return res.status(200).json({ token })
-    } catch (error:any) {
+        return res.status(200).json({ token, _id: newUser._id })
+    } catch (error: any) {
         console.log(error)
         res.status(500).json({ message: "Server Error Please Try Again" })
     }

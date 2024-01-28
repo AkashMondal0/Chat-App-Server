@@ -14,6 +14,19 @@ interface User {
     from?: string;
     updatedAt?: string;
     createdAt?: string;
+    status?: [
+        {
+            _id: string,
+            url: string,
+            type: 'image' | 'video' | 'audio' | "text"
+            forText?: string;
+            forTextBackground?: boolean;
+            forTextColor?: string;
+            forTextSize?: string;
+            createdAt: string | Date;
+        }
+    ];
+    online?: boolean;
 }
 
 interface File {

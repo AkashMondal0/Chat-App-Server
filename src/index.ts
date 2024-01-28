@@ -17,6 +17,8 @@ import AuthRouter from './routes/auth';
 import PrivateChatMessageRoute from './routes/private/chat';
 import redisConnection from './db/redis-connection';
 import { saveMessageInDB, saveMessageSeenInDB } from './controller/privateMessage';
+import statusRouter from './routes/status';
+import profileRouter from './routes/profile';
 
 env.config();
 
@@ -54,6 +56,9 @@ app.use("/user", userRouter);
 app.use("/private", privateChatRouter);
 app.use("/auth", AuthRouter)
 app.use("/PrivateMessage", PrivateChatMessageRoute)
+app.use("/status", statusRouter)
+app.use("/profile", profileRouter)
+
 
 app.get('/', (req, res) => {
   res.send('react android chat server redis and mongo socket v1.0.0')
