@@ -23,6 +23,7 @@ interface User {
             forTextBackground?: boolean;
             forTextColor?: string;
             forTextSize?: string;
+            seen?:string[];
             createdAt: string | Date;
         }
     ];
