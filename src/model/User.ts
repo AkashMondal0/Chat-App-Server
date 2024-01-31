@@ -26,6 +26,10 @@ const UserSchema = new mongoose.Schema<User>({
     coverPicture: {
         type: String,
     },
+    status:{
+        type: Array,
+        default: []
+    },
     followers: {
         type: Array,
         default: []
