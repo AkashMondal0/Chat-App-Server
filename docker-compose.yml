@@ -1,45 +1,54 @@
 version: '3.1'
 
 services:
-  # mongo:
-  #   image: mongo:latest
-  #   restart: always
-  #   ports:
-  #     - 27017:27017
-  #   volumes:
-  #     - ./data:/data/db
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: akash1234
-  #     MONGO_INITDB_DATABASE: chatapp
-
-  # redis:
-  #   image: redis:latest
-  #   restart: always
-  #   ports:
-  #     - "6379:6379"
-  #   command: redis-server --save 60 1
-  #   volumes:
-  #     - ./rdata:/rdata
-  #     - ./docker_datas/redis.conf:/usr/local/etc/redis/redis.conf
-  #   environment:
-  #     REDIS_PASSWORD: akash1234
-  #     REDIS_PORT: 6379
-  #     REDIS_DATABASES: 1
-
-  chatapp:
-    image: akashmondal0/react-native-backend:latest
+  mongo:
+    image: mongo:latest
     restart: always
     ports:
-      - 4000:4000
+      - 27017:27017
     volumes:
-      - .:/app
-    depends_on:
-      - mongo
-      - redis
+      - ./data:/data/db
     environment:
-      MONGO_URI: mongodb://16.171.183.141:27017/chatapp?authSource=admin
-      REDIS_URI: redis://:akash1234@16.171.183.141:6379
-      REDIS_PASSWORD: dRYjpuVfGUTCDttLnTON6KBP6q1kDLUD9ocnoVZAx7Ggmr0aMWK0ABw8JbMys+QSChO0rk+Csso2blKRqZSzlmOnA1tfgQUKybSIJTavNuJF4BEiUXhP/iXa2srdKY+8PdrgRVLPnfFy/yTUY9VzfIBBQH2wNpqvSSWy5/E9zporn4kVkXIQmXm+JPF+pd6UNcRg89AQebZbc1b32hOkxPpwTAMcfYLQAOH5SfcjpcH0nBCPPqhLFxXwoRd5+PHufwwkPUKHu9STcAL4lJW1uosg8XNX5GjPLXpdSu55UWtcTWIVyAdb0FHzxoVMvcwZfZzhihwrpXiJMrorXwew2g==
-      JWT_SECRET: 6379
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: akash1234
+      MONGO_INITDB_DATABASE: chatapp
+
+  redis:
+    image: redis:latest
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --save 60 1
+    volumes:
+      - ./rdata:/rdata
+      - ./docker_datas/redis.conf:/usr/local/etc/redis/redis.conf
+    environment:
+      REDIS_PASSWORD: akash1234
+      REDIS_PORT: 6379
       REDIS_DATABASES: 1
+  storage:
+    image: akashmondal0/sky-storage:latest
+    restart: always
+    ports:
+      - 4001:4001
+    container_name: storage
+    volumes:
+      - ./storage:/app/storage
+    environment:
+      PORT: 4001
+      HOST: http://13.127.232.152:4001
+
+  # chatapp:
+  #   image: akashmondal0/react-native-backend:latest
+  #   restart: always
+  #   ports:
+  #     - 4000:4000
+  #   volumes:
+  #     - .:/app
+  #   depends_on:
+  #     - mongo
+  #     - redis
+  #   environment:
+  #     MONGO_URI: mongodb://root:akash1234@13.127.232.152:27017/chatapp?authSource=admin
+  #     REDIS_URI: redis://:akash1234@13.127.232.152:6379
+  #     JWT_SECRET: dRYjpuVfGUTCDttLnTON6KBP6q1kDLUD9ocnoVZAx7Ggmr0aMWK0ABw8JbMys+QSChO0rk+Csso2blKRqZSzlmOnA1tfgQUKybSIJTavNuJF4BEiUXhP/iXa2srdKY+8PdrgRVLPnfFy/yTUY9VzfIBBQH2wNpqvSSWy5/E9zporn4kVkXIQmXm+JPF+pd6UNcRg89AQebZbc1b32hOkxPpwTAMcfYLQAOH5SfcjpcH0nBCPPqhLFxXwoRd5+PHufwwkPUKHu9STcAL4lJW1uosg8XNX5GjPLXpdSu55UWtcTWIVyAdb0FHzxoVMvcwZfZzhihwrpXiJMrorXwew2g==

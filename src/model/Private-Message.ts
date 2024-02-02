@@ -12,7 +12,7 @@ const PrivateMessageSchema = new mongoose.Schema<PrivateMessage>({
         required: true,
     },
     fileUrl: {
-        type: [String],
+        type: mongoose.Schema.Types.Array,
         required: false,
         default: [],
     },

@@ -12,7 +12,7 @@ userRouter.get("/search/:userKeyword", async (req, res) => {
                 { username: { $regex: req.params.userKeyword, $options: "i" } },
                 { email: { $regex: req.params.userKeyword, $options: "i" } },
             ],
-        }).limit(8).sort({ username: 1 }).select({ username: 1, email: 1 })
+        }).limit(8).sort({ username: 1 })
         res.status(200).json(searchUsers)
     } catch (error) {
         console.log(error)
