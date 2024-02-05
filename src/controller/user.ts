@@ -8,7 +8,14 @@ const findUsers = async (userIds: string[], authorId: string) => {
         const newQuery = async () => {
             const privateChatList = await User.find({ _id: { $in: userIds } })
             // await redisConnection.set(authorIdKey, JSON.stringify(privateChatList), "EX", 60 * 60 * 24 * 1)
-            return privateChatList
+            const result = await Promise.all(privateChatList.map(async(item) => {
+                const isOnline = await redisConnection.get(`userLogin:${item._id}`);
+                return {
+                    ...item._doc,
+                    isOnline: isOnline ? true : false
+                }
+            }));
+            return result
         }
 
         // if (caching) {

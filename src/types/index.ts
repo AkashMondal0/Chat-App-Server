@@ -27,7 +27,8 @@ interface User {
             createdAt: string | Date;
         }
     ];
-    online?: boolean;
+    isOnline?: boolean;
+    _doc?: User;
 }
 
 interface File {

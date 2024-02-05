@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // import { ApolloServer } from '@apollo/server';
 // import { expressMiddleware } from '@apollo/server/express4';
@@ -72,12 +73,34 @@ sub.subscribe("message")
 sub.subscribe("message_seen")
 sub.subscribe("message_typing")
 sub.subscribe("update_Chat_List")
+sub.subscribe("userStatus")
 
 socketIO.on('connection', (socket) => {
   // user --------------------------------------
 
-  socket.on('user_connect', (user) => {
-    socket.join(user.id);
+  socket.on('user_connect', async (user) => {
+    try {
+      socket.join(user.id);
+      // save user id to redis
+      const authorId = `status:${socket.id}`
+      await redisConnection.set(authorId, user.id, 'EX', 60 * 60 * 2);
+      await pub.publish("userStatus", JSON.stringify({ userId: user.id, status: true }));
+    } catch (error) {
+      console.log(error)
+    }
+  });
+
+  socket.on('disconnect', async () => {
+    try {
+      // socket.id ==> redis find user id and set status to false delete user id from redis
+      const authorId = `status:${socket.id}`
+      const user = await redisConnection.get(authorId);
+      await redisConnection.del(`userLogin:${user}`);
+      await redisConnection.del(authorId);
+      await pub.publish("userStatus", JSON.stringify({ userId: user, status: false }));
+    } catch (error) {
+      console.log(error)
+    }
   });
 
   // user chat list -------------------------------
@@ -132,9 +155,10 @@ socketIO.on('connection', (socket) => {
 
 });
 
-
+// redis pub/sub
 sub.on("message", (channel, message) => {
   if (channel === "message") {
+    // console.log('message', message)
     const { receiverId } = JSON.parse(message)
     socketIO.to(receiverId).emit('message_receiver', JSON.parse(message));
   }
@@ -156,8 +180,12 @@ sub.on("message", (channel, message) => {
     const { receiverId } = JSON.parse(message)
     socketIO.to(receiverId).emit('message_typing_receiver', JSON.parse(message));
   }
-})
 
+  else if (channel === "userStatus") {
+    const { userId, status } = JSON.parse(message)
+    socketIO.emit(userId, { userId, status });
+  }
+})
 
 
 httpServer.listen({ port: 4000 }, () => {
