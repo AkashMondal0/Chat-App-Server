@@ -2,6 +2,8 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // import { ApolloServer } from '@apollo/server';
 // import { expressMiddleware } from '@apollo/server/express4';
+// import typeDefs from './graphql/typeDefs';
+// import resolvers from './graphql/resolvers';
 import cors from 'cors';
 import express from 'express';
 import env from 'dotenv';
@@ -9,8 +11,6 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
-// import typeDefs from './graphql/typeDefs';
-// import resolvers from './graphql/resolvers';
 import mongodbConnection from './db/mongo-connection';
 import userRouter from './routes/user';
 import privateChatRouter from './routes/private';
@@ -20,9 +20,13 @@ import redisConnection from './db/redis-connection';
 import { saveMessageInDB, saveMessageSeenInDB } from './controller/privateMessage';
 import statusRouter from './routes/status';
 import profileRouter from './routes/profile';
+import responseTime from 'response-time';
+import { client, httpRequestDurationMicroseconds, totalRequestCounter } from './grafana/prometheus';
+import logger from './grafana/loki';
+
 
 env.config();
-
+// for express
 const app = express();
 const httpServer = createServer(app);
 const socketIO = new Server(httpServer, {
@@ -30,29 +34,42 @@ const socketIO = new Server(httpServer, {
     origin: "*"
   }
 });
-
-
 // const server = new ApolloServer({ typeDefs, resolvers });
+
+
+app.use(responseTime((req, res, time) => {
+  httpRequestDurationMicroseconds
+    .labels({
+      method: req.method,
+      route: req.url,
+      statusCode: res.statusCode
+    }).observe(time);
+  totalRequestCounter.inc({
+    method: req.method,
+    route: req.url,
+    statusCode: res.statusCode
+  });
+}))
+
 app.use(cors());
 app.use(express.json());
-app.use(helmet({
-  crossOriginEmbedderPolicy: false,
-  contentSecurityPolicy: {
-    directives: {
-      imgSrc: [`'self'`, 'data:', 'apollo-server-landing-page.cdn.apollographql.com'],
-      scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
-      manifestSrc: [`'self'`, 'apollo-server-landing-page.cdn.apollographql.com'],
-      frameSrc: [`'self'`, 'sandbox.embed.apollographql.com'],
-    },
-  },
-}));
-app.use(morgan('common'));
-mongodbConnection
+mongodbConnection()
+// app.use(helmet({
+//   crossOriginEmbedderPolicy: false,
+//   contentSecurityPolicy: {
+//     directives: {
+//       imgSrc: [`'self'`, 'data:', 'apollo-server-landing-page.cdn.apollographql.com'],
+//       scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
+//       manifestSrc: [`'self'`, 'apollo-server-landing-page.cdn.apollographql.com'],
+//       frameSrc: [`'self'`, 'sandbox.embed.apollographql.com'],
+//     },
+//   },
+// }));
+// app.use(morgan('common'));
 // await server.start();
 
 
 // app.use("/graphql", expressMiddleware(server));
-
 app.use("/user", userRouter);
 app.use("/private", privateChatRouter);
 app.use("/auth", AuthRouter)
@@ -65,6 +82,27 @@ app.get('/', (req, res) => {
   res.send('react android chat server redis and mongo socket v1.0.0')
 })
 
+app.get('/test', (req, res) => {
+  // logger.info('test')
+  let a = 0
+  for (let i = 0; i < 1000000; i++) {
+    a += 1
+  }
+  res.send('react android chat server redis and mongo socket v1.0.0')
+})
+
+app.get('/test2', (req, res) => {
+  // logger.error('test2')
+
+  res.send('react android chat server redis and mongo socket v1.0.0')
+})
+
+app.get('/metrics', async (req, res) => {
+  res.setHeader('Content-Type', client.register.contentType);
+  const metrics = await client.register.metrics();
+  res.send(metrics);
+})
+
 // redis pub/sub
 const pub = redisConnection
 const sub = redisConnection.duplicate()
@@ -75,6 +113,7 @@ sub.subscribe("message_typing")
 sub.subscribe("update_Chat_List")
 sub.subscribe("userStatus")
 
+// socket io
 socketIO.on('connection', (socket) => {
   // user --------------------------------------
 
