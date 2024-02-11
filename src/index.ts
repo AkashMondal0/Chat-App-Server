@@ -79,23 +79,9 @@ app.use("/profile", profileRouter)
 
 
 app.get('/', (req, res) => {
-  res.send('react android chat server redis and mongo socket v1.0.0')
+  res.send('react android chat server redis and mongo socket v1.1.0')
 })
 
-app.get('/test', (req, res) => {
-  // logger.info('test')
-  let a = 0
-  for (let i = 0; i < 1000000; i++) {
-    a += 1
-  }
-  res.send('react android chat server redis and mongo socket v1.0.0')
-})
-
-app.get('/test2', (req, res) => {
-  // logger.error('test2')
-
-  res.send('react android chat server redis and mongo socket v1.0.0')
-})
 
 app.get('/metrics', async (req, res) => {
   res.setHeader('Content-Type', client.register.contentType);
@@ -112,6 +98,7 @@ sub.subscribe("message_seen")
 sub.subscribe("message_typing")
 sub.subscribe("update_Chat_List")
 sub.subscribe("userStatus")
+sub.subscribe("qr_code_receiver")
 
 // socket io
 socketIO.on('connection', (socket) => {
@@ -192,6 +179,12 @@ socketIO.on('connection', (socket) => {
     socketIO.to(senderId).emit('group_chat_list', data);
   });
 
+  // qr code --------------------------------------
+
+  socket.on('qr_code_sender', async (data) => {
+    await pub.publish("qr_code_receiver", JSON.stringify(data));
+  });
+
 });
 
 // redis pub/sub
@@ -223,6 +216,11 @@ sub.on("message", (channel, message) => {
   else if (channel === "userStatus") {
     const { userId, status } = JSON.parse(message)
     socketIO.emit(userId, { userId, status });
+  }
+
+  else if (channel === "qr_code_receiver") {
+    const { socketId, token } = JSON.parse(message)
+    socketIO.to(socketId).emit('qr_code_receiver', { token: token });
   }
 })
 
