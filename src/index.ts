@@ -1,40 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
-// import { ApolloServer } from '@apollo/server';
 // import { expressMiddleware } from '@apollo/server/express4';
-// import typeDefs from './graphql/typeDefs';
-// import resolvers from './graphql/resolvers';
 import cors from 'cors';
 import express from 'express';
 import env from 'dotenv';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { createServer } from 'http';
-import { Server } from 'socket.io';
 import mongodbConnection from './db/mongo-connection';
 import userRouter from './routes/user';
 import privateChatRouter from './routes/private';
 import AuthRouter from './routes/auth';
 import PrivateChatMessageRoute from './routes/private/chat';
-import redisConnection from './db/redis-connection';
-import { saveMessageInDB, saveMessageSeenInDB } from './controller/privateMessage';
 import statusRouter from './routes/status';
 import profileRouter from './routes/profile';
 import responseTime from 'response-time';
 import { client, httpRequestDurationMicroseconds, totalRequestCounter } from './grafana/prometheus';
 import logger from './grafana/loki';
+import { socketIO } from './service/socketio';
+import { StartKafka } from './kafka';
 
 
 env.config();
 // for express
 const app = express();
-const httpServer = createServer(app);
-const socketIO = new Server(httpServer, {
-  cors: {
-    origin: "*"
-  }
-});
-// const server = new ApolloServer({ typeDefs, resolvers });
+const PORT = process.env.PORT || 4000;
+const APP_VERSION = process.env.APP_VERSION || 'v0.0.0';
+const APP_NAME = process.env.APP_NAME || 'sky-chat';
+export const httpServer = createServer(app);
+
+
 
 
 app.use(responseTime((req, res, time) => {
@@ -50,10 +45,8 @@ app.use(responseTime((req, res, time) => {
     statusCode: res.statusCode
   });
 }))
-
 app.use(cors());
 app.use(express.json());
-mongodbConnection()
 // app.use(helmet({
 //   crossOriginEmbedderPolicy: false,
 //   contentSecurityPolicy: {
@@ -66,20 +59,24 @@ mongodbConnection()
 //   },
 // }));
 // app.use(morgan('common'));
-// await server.start();
-
-
-// app.use("/graphql", expressMiddleware(server));
 app.use("/user", userRouter);
 app.use("/private", privateChatRouter);
 app.use("/auth", AuthRouter)
 app.use("/PrivateMessage", PrivateChatMessageRoute)
 app.use("/status", statusRouter)
 app.use("/profile", profileRouter)
+// app.use("/graphql", expressMiddleware(server));
+
+
+// start service
+mongodbConnection()
+socketIO.listen(httpServer)
+StartKafka()
+// await server.start();
 
 
 app.get('/', (req, res) => {
-  res.send('react android chat server redis and mongo socket v1.1.0')
+  res.send(`Welcome to ${APP_NAME} ${APP_VERSION}`);
 })
 
 
@@ -89,142 +86,7 @@ app.get('/metrics', async (req, res) => {
   res.send(metrics);
 })
 
-// redis pub/sub
-const pub = redisConnection
-const sub = redisConnection.duplicate()
 
-sub.subscribe("message")
-sub.subscribe("message_seen")
-sub.subscribe("message_typing")
-sub.subscribe("update_Chat_List")
-sub.subscribe("userStatus")
-sub.subscribe("qr_code_receiver")
-
-// socket io
-socketIO.on('connection', (socket) => {
-  // user --------------------------------------
-
-  socket.on('user_connect', async (user) => {
-    try {
-      socket.join(user.id);
-      // save user id to redis
-      const authorId = `status:${socket.id}`
-      await redisConnection.set(authorId, user.id, 'EX', 60 * 60 * 2);
-      await pub.publish("userStatus", JSON.stringify({ userId: user.id, status: true }));
-    } catch (error) {
-      console.log(error)
-    }
-  });
-
-  socket.on('disconnect', async () => {
-    try {
-      // socket.id ==> redis find user id and set status to false delete user id from redis
-      const authorId = `status:${socket.id}`
-      const user = await redisConnection.get(authorId);
-      await redisConnection.del(`userLogin:${user}`);
-      await redisConnection.del(authorId);
-      await pub.publish("userStatus", JSON.stringify({ userId: user, status: false }));
-    } catch (error) {
-      console.log(error)
-    }
-  });
-
-  // user chat list -------------------------------
-  socket.on('update_Chat_List_Sender', async (_data) => {
-    await pub.publish("update_Chat_List", JSON.stringify(_data));
-  });
-
-  // message --------------------------------------
-  socket.on('message_sender', async (_data) => {
-    await pub.publish("message", JSON.stringify(_data));
-    await saveMessageInDB(_data)
-  });
-
-  socket.on('message_seen_sender', async (_data) => {
-    await pub.publish("message_seen", JSON.stringify(_data));
-    await saveMessageSeenInDB(_data)
-  });
-
-  // typing --------------------------------------
-  socket.on('message_typing_sender', async (_data) => {
-    await pub.publish("message_typing", JSON.stringify(_data));
-  });
-
-  // group --------------------------------------
-  socket.on('user_connect_group', (group) => {
-    socket.join(group.id);
-  });
-
-  socket.on('group_message_for_user', (group) => {
-    socket.join(group.id);
-    socketIO.to(group.id).emit('group_message_for_user', group.data);
-  });
-
-  socket.on('group_message_for_user_seen', (group) => {
-    socket.join(group.groupId);
-    socketIO.to(group.groupId).emit('group_message_for_user_seen', group);
-  });
-
-  // typing group --------------------------------------
-  socket.on('group_typing', (_data) => {
-    const { groupId } = _data;
-    socket.join(groupId);
-    socketIO.to(groupId).emit('group_typing', _data);
-  });
-
-  // user chat list -------------------------------
-  socket.on('group_chat_list', (_data) => {
-    const { senderId, data } = _data;
-
-    socketIO.to(senderId).emit('group_chat_list', data);
-  });
-
-  // qr code --------------------------------------
-
-  socket.on('qr_code_sender', async (data) => {
-    await pub.publish("qr_code_receiver", JSON.stringify(data));
-  });
-
-});
-
-// redis pub/sub
-sub.on("message", (channel, message) => {
-  if (channel === "message") {
-    // console.log('message', message)
-    const { receiverId } = JSON.parse(message)
-    socketIO.to(receiverId).emit('message_receiver', JSON.parse(message));
-  }
-  else if (channel === "message_seen") {
-    const { receiverId } = JSON.parse(message)
-    socketIO.to(receiverId).emit('message_seen_receiver', JSON.parse(message));
-  }
-  else if (channel === "message_typing") {
-    const { receiverId } = JSON.parse(message)
-    socketIO.to(receiverId).emit('message_typing_receiver', JSON.parse(message));
-  }
-  else if (channel === "update_Chat_List") {
-    const { receiverId, senderId } = JSON.parse(message)
-    socketIO.to(receiverId).emit('update_Chat_List_Receiver', JSON.parse(message));
-    socketIO.to(senderId).emit('update_Chat_List_Receiver', JSON.parse(message));
-  }
-
-  else if (channel === "message_typing_sender") {
-    const { receiverId } = JSON.parse(message)
-    socketIO.to(receiverId).emit('message_typing_receiver', JSON.parse(message));
-  }
-
-  else if (channel === "userStatus") {
-    const { userId, status } = JSON.parse(message)
-    socketIO.emit(userId, { userId, status });
-  }
-
-  else if (channel === "qr_code_receiver") {
-    const { socketId, token } = JSON.parse(message)
-    socketIO.to(socketId).emit('qr_code_receiver', { token: token });
-  }
-})
-
-
-httpServer.listen({ port: 4000 }, () => {
+httpServer.listen({ port: PORT }, () => {
   console.log(`🚀 Server ready at http://localhost:4000`)
 });
