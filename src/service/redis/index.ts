@@ -18,12 +18,12 @@ sub.on("message", async (channel, message) => {
     if (channel === "message") {
         // console.log('message', message)
         const { receiverId } = JSON.parse(message)
-        socketIO.to(receiverId).emit('message_receiver', message);
+        socketIO.to(receiverId).emit('message_receiver', JSON.parse(message));
         await produceMessage(message)
     }
     else if (channel === "message_seen") {
         const { receiverId } = JSON.parse(message)
-        socketIO.to(receiverId).emit('message_seen_receiver', JSON.parse(message));
+        socketIO.to(receiverId).emit('message_seen_receiver', JSON.parse(message))
         await produceMessageSeen(message)
     }
     else if (channel === "message_typing") {
