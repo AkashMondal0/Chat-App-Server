@@ -1,6 +1,14 @@
 version: '3.1'
 
 services:
+  app:
+    image: akashmondal0/react-native-backend:test
+    restart: always
+    ports:
+      - 4000:4000
+    env_file:
+      - ./.env
+
   mongo:
     image: mongo:latest
     restart: always
@@ -33,29 +41,24 @@ services:
       - ./storage:/app/storage
     env_file:
       - ./.env
-
-  app:
-    image: akashmondal0/react-native-backend:latest
-    restart: always
-    ports:
-      - 4000:4000
-    env_file:
-      - ./.env
   
   zookeeper:
-    image: wurstmeister/zookeeper:latest
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
     ports:
-      - "2181:2181"
+      - 2181:2181
+    
   kafka:
-    image: wurstmeister/kafka:2.11-1.1.1
-    ports:
-      - "9092:9092"
-    links:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
       - zookeeper
+    ports:
+      - 9092:9092
+      - 29092:29092
     env_file:
       - ./.env
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
 
   prom-server:
     image: prom/prometheus

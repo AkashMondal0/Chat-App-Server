@@ -6,7 +6,8 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const kafka = new Kafka({
-    brokers: [process.env.KAFKA_BROKER as string],
+    brokers: [ process.env.KAFKA_BROKER as string],
+    clientId: 'chat-app',
     ssl: {
         ca: [fs.readFileSync(path.resolve(process.env.CA_PATH as string), "utf-8")]
     },
