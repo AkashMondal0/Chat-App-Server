@@ -115,11 +115,11 @@ AuthRouter.get("/authorization", async (req, res) => {
 
         const user = await User.findOne({ email: verify.email })
 
-        const authorIdKey = `userLogin:${user?._id}`
-        const caching = await redisConnection.get(authorIdKey)
-        if (!caching) {
-            await redisConnection.set(authorIdKey, JSON.stringify({ user, isOnline: true }), "EX", 60 * 60)
-        }
+        // const authorIdKey = `userLogin:${user?._id}`
+        // const caching = await redisConnection.get(authorIdKey)
+        // if (!caching) {
+        //     await redisConnection.set(authorIdKey, JSON.stringify({ user, isOnline: true }), "EX", 60 * 60)
+        // }
         return res.status(200).json(user)
     } catch (error: any) {
         console.log(error)
