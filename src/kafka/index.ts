@@ -6,7 +6,7 @@ import * as dotenv from "dotenv";
 dotenv.config();
 
 const kafka = new Kafka({
-    brokers: [ process.env.KAFKA_BROKER as string],
+    brokers: [process.env.KAFKA_BROKER as string],
     clientId: 'chat-app',
     ssl: {
         ca: [fs.readFileSync(path.resolve(process.env.CA_PATH as string), "utf-8")]
@@ -47,7 +47,6 @@ const produceMessage = async (message: string) => {
     const _producer = await createProducer()
     await _producer.send({
         topic: 'MESSAGES',
-        timeout: 3000,
         messages: [
             {
                 value: message,
@@ -62,7 +61,6 @@ const produceMessageSeen = async (message: string) => {
     const _producer = await createProducer()
     await _producer.send({
         topic: 'MESSAGES_SEEN',
-        timeout: 3000,
         messages: [
             {
                 value: message,
@@ -81,7 +79,6 @@ const consumeMessage = async () => {
         fromBeginning: true,
     })
     await consumer.run({
-        autoCommit: true,
         eachMessage: async ({ topic, partition, message, pause }) => {
             if (!message.value) return
             try {
@@ -106,9 +103,13 @@ const consumeMessage = async () => {
 }
 
 const StartKafka = async () => {
-    await initKafkaAdmin()
-    await consumeMessage()
-
+    try {
+        await initKafkaAdmin()
+        await consumeMessage()
+        console.log('kafka started')
+    } catch (error) {
+        console.log(error)
+    }
 }
 export {
     StartKafka,

@@ -1,5 +1,4 @@
 import redisConnection from "../../db/redis-connection"
-import { produceMessage, produceMessageSeen } from "../../kafka"
 import { socketIO } from "../socketio"
 
 // redis pub/sub
@@ -16,15 +15,12 @@ sub.subscribe("qr_code_receiver")
 // redis pub/sub
 sub.on("message", async (channel, message) => {
     if (channel === "message") {
-        // console.log('message', message)
         const { receiverId } = JSON.parse(message)
         socketIO.to(receiverId).emit('message_receiver', JSON.parse(message));
-        await produceMessage(message)
     }
     else if (channel === "message_seen") {
         const { receiverId } = JSON.parse(message)
         socketIO.to(receiverId).emit('message_seen_receiver', JSON.parse(message))
-        await produceMessageSeen(message)
     }
     else if (channel === "message_typing") {
         const { receiverId } = JSON.parse(message)
@@ -51,3 +47,11 @@ sub.on("message", async (channel, message) => {
         socketIO.to(socketId).emit('qr_code_receiver', { token: token });
     }
 })
+
+
+export async function findUserSocketId(userId: string) {
+    const authorId = `userLogin:${userId}`
+    const userSocketId = await redisConnection.get(authorId);
+    if(!userSocketId) return null
+    return JSON.parse(userSocketId).socketId
+}
