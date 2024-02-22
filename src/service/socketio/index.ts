@@ -99,4 +99,38 @@ socketIO.on('connection', (socket) => {
         await pub.publish("qr_code_receiver", JSON.stringify(data));
     });
 
+    // tic tac teo --------------------------------------
+
+    socket.on('incoming_game_request_sender', async (_data) => {
+        const userSocketId = await findUserSocketId(_data.receiverId)
+        if (userSocketId) {
+            const data = {
+                ..._data,
+                receiverId: userSocketId
+            }
+            socket.to(userSocketId).emit('incoming_game_request_receiver', data);
+        }
+    });
+    socket.on('game_request_Answer_sender', async (_data) => {
+        const userSocketId = await findUserSocketId(_data.receiverId)
+        if (userSocketId) {
+            const data = {
+                ..._data,
+                receiverId: userSocketId
+            }
+            socket.to(userSocketId).emit('game_request_Answer_receiver', data);
+        }
+    });
+
+    socket.on('in_game_sender', async (_data) => {
+        const userSocketId = await findUserSocketId(_data.receiverId)
+        if (userSocketId) {
+            const data = {
+                ..._data,
+                receiverId: userSocketId
+            }
+            socket.to(userSocketId).emit('in_game_receiver', data);
+        }
+    });
+
 });
