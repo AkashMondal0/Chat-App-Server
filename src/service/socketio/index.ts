@@ -54,28 +54,28 @@ socketIO.on('connection', (socket) => {
     // message --------------------------------------
     socket.on('message_sender', async (_data) => {
         const userSocketId = await findUserSocketId(_data.receiverId)
+        const data = {
+            ..._data,
+            receiverId: userSocketId
+        }
+        const stringify = JSON.stringify(data)
         if (userSocketId) {
-            const data = {
-                ..._data,
-                receiverId: userSocketId
-            }
-            const stringify = JSON.stringify(data)
-            produceMessage(stringify)
             pub.publish("message", stringify);
         }
+        produceMessage(stringify)
     });
 
     socket.on('message_seen_sender', async (_data) => {
         const userSocketId = await findUserSocketId(_data.receiverId)
+        const data = {
+            ..._data,
+            receiverId: userSocketId
+        }
+        const stringify = JSON.stringify(data)
         if (userSocketId) {
-            const data = {
-                ..._data,
-                receiverId: userSocketId
-            }
-            const stringify = JSON.stringify(data)
-            produceMessageSeen(stringify)
             pub.publish("message_seen", stringify);
         }
+        produceMessageSeen(stringify)
     });
 
     // typing --------------------------------------
@@ -133,4 +133,34 @@ socketIO.on('connection', (socket) => {
         }
     });
 
+    // group call --------------------------------------
+
+    socket.on('group_chat_connection_sender', async (_data) => {
+        const { receiverIds } = _data
+        receiverIds.forEach(async (receiverId: string) => {
+            const userSocketId = await findUserSocketId(receiverId)
+            if (userSocketId) {
+                const data = {
+                    ..._data,
+                    receiverId: userSocketId
+                }
+                socket.to(userSocketId).emit('group_chat_connection_receiver', data);
+            }
+        })
+    })
+
+    socket.on('group_message_sender', async (_data) => {
+        const { receiverIds } = _data
+
+        receiverIds.forEach(async (receiverId: string) => {
+            const userSocketId = await findUserSocketId(receiverId)
+            if (userSocketId) {
+                const data = {
+                    ..._data,
+                    receiverId: userSocketId
+                }
+                socket.to(userSocketId).emit('group_message_receiver', data);
+            }
+        })
+    });
 });

@@ -1,3 +1,5 @@
+import { privateMessage } from "../routes/private/chat";
+
 interface User {
     _id: string;
     username: string;
@@ -62,16 +64,6 @@ interface PrivateChat {
     loadAllMessages?: boolean | undefined;
     page?: number | undefined;
 }
-interface GroupMessage {
-    content: string;
-    fileUrl: File[];
-    memberId: string;
-    groupId: string;
-    deleted: boolean;
-    seenBy: User[];
-    deliveredTo: User[];
-}
-
 interface GroupChat {
     _id: string;
     name: string;
@@ -79,9 +71,11 @@ interface GroupChat {
     admins?: User[];
     members: User[];
     lastMessageContent: string;
-    messages?: GroupMessage[];
+    messages?: privateMessage[];
     updatedAt?: string;
     createdAt?: string;
+    createdBy: User;
+    picture?: string;
 }
 
 export {
@@ -89,6 +83,6 @@ export {
     PrivateMessage,
     PrivateChat,
     File,
-    GroupMessage,
     GroupChat,
 };
+export default User;

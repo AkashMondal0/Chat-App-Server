@@ -19,6 +19,7 @@ import { client, httpRequestDurationMicroseconds, totalRequestCounter } from './
 import logger from './grafana/loki';
 import { socketIO } from './service/socketio';
 import { StartKafka } from './kafka';
+import GroupConversationRouter from './routes/group';
 
 
 env.config();
@@ -60,11 +61,12 @@ app.use(express.json());
 // }));
 // app.use(morgan('common'));
 app.use("/user", userRouter);
+app.use("/profile", profileRouter);
 app.use("/private", privateChatRouter);
 app.use("/auth", AuthRouter)
 app.use("/PrivateMessage", PrivateChatMessageRoute)
+app.use("/groupConversation", GroupConversationRouter)
 app.use("/status", statusRouter)
-app.use("/profile", profileRouter)
 // app.use("/graphql", expressMiddleware(server));
 
 
