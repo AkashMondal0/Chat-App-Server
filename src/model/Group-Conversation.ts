@@ -41,10 +41,15 @@ const GroupSchema = new mongoose.Schema<GroupChat>({
         ref: "Private-Message",
         default: []
     },
+    Users: {
+        type: mongoose.Schema.Types.Array,
+        ref: "User",
+        default: []
+    },
     createdBy: {
         type: mongoose.Schema.Types.String,
         required: true,
-    }
+    },
 }, { timestamps: true });
 
 

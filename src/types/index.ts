@@ -1,4 +1,3 @@
-import { privateMessage } from "../routes/private/chat";
 
 interface User {
     _id: string;
@@ -64,18 +63,36 @@ interface PrivateChat {
     loadAllMessages?: boolean | undefined;
     page?: number | undefined;
 }
+enum Role {
+    admin =
+    "admin",
+    member =
+    "member",
+    coAdmin =
+    "co-admin",
+}
 interface GroupChat {
     _id: string;
     name: string;
     description: string;
     admins?: User[];
-    members: User[];
+    members: [
+        {
+            role: Role,
+            userId: string,
+            _id: string
+        },
+    ];
     lastMessageContent: string;
-    messages?: privateMessage[];
-    updatedAt?: string;
-    createdAt?: string;
+    messages?: PrivateMessage[];
+    updatedAt?: string | Date;
+    createdAt?: string | Date;
+    typing?: boolean;
+    loadAllMessages?: boolean | undefined;
+    page?: number | undefined;
     createdBy: User;
     picture?: string;
+    Users?: User[];
 }
 
 export {

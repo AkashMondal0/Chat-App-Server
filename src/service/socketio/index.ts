@@ -66,16 +66,29 @@ socketIO.on('connection', (socket) => {
     });
 
     socket.on('message_seen_sender', async (_data) => {
-        const userSocketId = await findUserSocketId(_data.receiverId)
-        const data = {
-            ..._data,
-            receiverId: userSocketId
+       if (_data.receiverId) {
+            const userSocketId = await findUserSocketId(_data.receiverId)
+            if (userSocketId) {
+                const data = {
+                    ..._data,
+                    receiverId: userSocketId
+                }
+                pub.publish("message_seen", JSON.stringify(data));
+            }
+            produceMessageSeen(JSON.stringify(_data))
+        } else {
+            const { receiverIds } = _data
+            receiverIds.forEach(async (receiverId: string) => {
+                const userSocketId = await findUserSocketId(receiverId)
+                if (userSocketId) {
+                    const data = {
+                        ..._data,
+                        receiverId: userSocketId
+                    }
+                    pub.publish("message_seen", JSON.stringify(data));
+                }
+            })
         }
-        const stringify = JSON.stringify(data)
-        if (userSocketId) {
-            pub.publish("message_seen", stringify);
-        }
-        produceMessageSeen(stringify)
     });
 
     // typing --------------------------------------
@@ -162,5 +175,25 @@ socketIO.on('connection', (socket) => {
                 socket.to(userSocketId).emit('group_message_receiver', data);
             }
         })
+
+        produceMessage(JSON.stringify(_data))
+
+    });
+
+    socket.on('group_message_seen_sender', async (_data) => {
+        const { receiverIds } = _data
+
+        receiverIds.forEach(async (receiverId: string) => {
+            const userSocketId = await findUserSocketId(receiverId)
+            if (userSocketId) {
+                const data = {
+                    ..._data,
+                    receiverId: userSocketId
+                }
+                socket.to(userSocketId).emit('group_message_seen_receiver', data);
+            }
+        })
+
+        produceMessageSeen(JSON.stringify(_data))
     });
 });

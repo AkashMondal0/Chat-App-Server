@@ -53,14 +53,12 @@ privateChatRouter.get("/chat/list", async (req, res) => {
         const findUserIds = privateChatList?.map((item) => item.users?.filter((_userId) => _userId !== userId)[0]) || []
 
         // user details list
-        const usersDetailsList = await findUsers(findUserIds as string[], userId) as User[]
+        const usersDetailsList = await findUsers(findUserIds as string[]) as User[]
 
         const privateChatListWithLastMessage = await Promise.all(privateChatList.map(async (chat) => {
             chat.messages = await PrivateMessage.find({ conversationId: chat._id })
                 .sort({ createdAt: -1 })
                 .limit(20).exec()
-            chat.lastMessageContent = chat?.messages.length > 0 ? chat?.messages[0]?.content : chat.lastMessageContent
-            chat.updatedAt = chat?.messages.length > 0 ? chat?.messages[chat?.messages.length - 1]?.createdAt : chat.updatedAt
             chat.userDetails = usersDetailsList?.find((user) => user._id.toString() === chat.users?.filter((_userId) => _userId !== userId)[0])
             return chat
         }))

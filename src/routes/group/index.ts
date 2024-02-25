@@ -2,6 +2,8 @@ import express from "express"
 import GroupConversation from "../../model/Group-Conversation"
 import { User } from "../../types"
 import jwt from "jsonwebtoken"
+import PrivateMessage from "../../model/Private-Message"
+import { findUsers } from "../../controller/user"
 // import PrivateMessage from "../../model/Private-Message"
 const secret = process.env.JWT_SECRET
 
@@ -26,6 +28,7 @@ GroupConversationRouter.post("/chat/connection", async (req, res) => {
             messages: [],
             lastMessageContent: "This group is created by " + authorId,
             createdBy: authorId,
+            Users:[]
         })
         res.status(200).json(createGroupConversation)
     } catch (error) {
@@ -42,14 +45,14 @@ GroupConversationRouter.get("/chat/list", async (req, res) => {
         let groupChatList = await GroupConversation.find({ users: { $nin: [userId] } })
 
         groupChatList = await Promise.all(groupChatList.map(async (chat) => {
-            // chat.messages = await PrivateMessage.find({ conversationId: chat._id })
-            //     .sort({ createdAt: -1 })
-            //     .limit(20).exec()
-            chat.lastMessageContent = chat?.messages && chat?.messages.length > 0 ? chat?.messages[0]?.content : chat.lastMessageContent
-            // chat.updatedAt = chat?.messages && chat?.messages.length > 0 ? chat?.messages[chat?.messages.length - 1]?.createdAt : chat.updatedAt
+            chat.messages = await PrivateMessage.find({ conversationId: chat._id })
+                .sort({ createdAt: -1 })
+                .limit(20).exec()
+            chat.Users = await findUsers(chat.members.map((member) => member.userId)) as User[]
             return chat
         }))
 
+        // console.log(groupChatList)
         res.status(200).json({
             groupChatList
         })
