@@ -66,7 +66,7 @@ socketIO.on('connection', (socket) => {
     });
 
     socket.on('message_seen_sender', async (_data) => {
-       if (_data.receiverId) {
+        if (_data.receiverId) {
             const userSocketId = await findUserSocketId(_data.receiverId)
             if (userSocketId) {
                 const data = {
@@ -196,4 +196,33 @@ socketIO.on('connection', (socket) => {
 
         produceMessageSeen(JSON.stringify(_data))
     });
+
+    // sketch game --------------------------------------
+
+    // for join and create room request and answer
+    socket.on('sketch_create_room_sender', async (_data) => {
+        const { roomId } = _data
+        socket.join(roomId)
+        socket.broadcast.to(roomId).emit('sketch_user_join_Broadcast_room_receiver', _data);
+    });
+
+    socket.on('sketch_room_join_req_sender', async (_data) => {
+        const { adminId } = _data
+        socket.to(adminId).emit('sketch_room_join_req_receiver', _data);
+    });
+
+    socket.on('sketch_room_join_answer_sender', async (_data) => {
+        const { receiverId } = _data
+        socket.to(receiverId).emit('sketch_room_join_answer_receiver', _data);
+    });
+
+    // for sketch data broadcast
+
+    // socket.on('sketch_in_room_sender', async (_data) => {
+    //     const { roomId, userId, socketId, adminId } = _data
+    //     socket.join(roomId)
+    //     socket.broadcast.to(roomId).emit('sketch_in_room_receiver', _data);
+    // });
+
+
 });
