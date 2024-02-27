@@ -11,10 +11,12 @@ const GroupConversationRouter = express.Router()
 
 GroupConversationRouter.post("/chat/connection", async (req, res) => {
     try {
-        const { users,
+        const { 
+            users,
             name,
             description,
             authorId,
+            picture
         } = req.body
 
         if (users.length <= 2 || !users) {
@@ -28,7 +30,8 @@ GroupConversationRouter.post("/chat/connection", async (req, res) => {
             messages: [],
             lastMessageContent: "This group is created by " + authorId,
             createdBy: authorId,
-            Users:[]
+            Users:[],
+            picture
         })
         res.status(200).json(createGroupConversation)
     } catch (error) {
