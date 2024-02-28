@@ -223,5 +223,10 @@ socketIO.on('connection', (socket) => {
         socket.broadcast.to(roomId).emit('sketch_room_load_canvas_data_receiver', _data);
     });
 
+    socket.on('following_pointer_sender', async (_data) => {
+        const { roomId } = _data
+        socket.broadcast.to(roomId).emit('following_pointer_receiver', _data);
+    });
+
 
 });
