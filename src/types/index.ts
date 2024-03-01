@@ -1,3 +1,4 @@
+
 interface User {
     _id: string;
     username: string;
@@ -62,26 +63,36 @@ interface PrivateChat {
     loadAllMessages?: boolean | undefined;
     page?: number | undefined;
 }
-interface GroupMessage {
-    content: string;
-    fileUrl: File[];
-    memberId: string;
-    groupId: string;
-    deleted: boolean;
-    seenBy: User[];
-    deliveredTo: User[];
+enum Role {
+    admin =
+    "admin",
+    member =
+    "member",
+    coAdmin =
+    "co-admin",
 }
-
 interface GroupChat {
     _id: string;
     name: string;
     description: string;
     admins?: User[];
-    members: User[];
+    members: [
+        {
+            role: Role,
+            userId: string,
+            _id: string
+        },
+    ];
     lastMessageContent: string;
-    messages?: GroupMessage[];
-    updatedAt?: string;
-    createdAt?: string;
+    messages?: PrivateMessage[];
+    updatedAt?: string | Date;
+    createdAt?: string | Date;
+    typing?: boolean;
+    loadAllMessages?: boolean | undefined;
+    page?: number | undefined;
+    createdBy: User;
+    picture?: string;
+    Users?: User[];
 }
 
 export {
@@ -89,6 +100,6 @@ export {
     PrivateMessage,
     PrivateChat,
     File,
-    GroupMessage,
     GroupChat,
 };
+export default User;

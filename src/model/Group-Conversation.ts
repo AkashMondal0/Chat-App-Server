@@ -11,10 +11,9 @@ const GroupSchema = new mongoose.Schema<GroupChat>({
         type: String,
         max: 50,
     },
-    admins: {
-        type: Array,
-        ref: "User",
-        default: []
+    picture: {
+        type: String,
+        required: false,
     },
     members: {
         type: [
@@ -24,8 +23,8 @@ const GroupSchema = new mongoose.Schema<GroupChat>({
                     enum: ["admin", "member", "co-admin"],
                     default: "member"
                 },
-                user: {
-                    type: mongoose.Schema.Types.ObjectId,
+                userId: {
+                    type: mongoose.Schema.Types.String,
                     ref: "User",
                     required: true,
                 }
@@ -38,9 +37,18 @@ const GroupSchema = new mongoose.Schema<GroupChat>({
         required: true,
     },
     messages: {
-        type: Array,
-        ref: "Group-Message",
+        type: mongoose.Schema.Types.Array,
+        ref: "Private-Message",
         default: []
+    },
+    Users: {
+        type: mongoose.Schema.Types.Array,
+        ref: "User",
+        default: []
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.String,
+        required: true,
     },
 }, { timestamps: true });
 

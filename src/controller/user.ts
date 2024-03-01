@@ -1,7 +1,7 @@
 import redisConnection from "../db/redis-connection"
 import User from "../model/User"
 
-const findUsers = async (userIds: string[], authorId: string) => {
+const findUsers = async (userIds: string[]) => {
     try {
         // const authorIdKey = `userList:${authorId}`
         // const caching = await redisConnection.get(authorIdKey)

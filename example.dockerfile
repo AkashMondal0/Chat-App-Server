@@ -1,0 +1,22 @@
+FROM node:18
+
+WORKDIR /app
+COPY . .
+RUN npm install
+
+EXPOSE 4000
+CMD ["npm","run","start"]
+
+ENV MONGODB_URI=
+ENV REDIS_URL=
+ENV JWT_SECRET=
+
+# # kafka broker env
+ENV KAFKA_BROKER=
+
+# # kafka
+
+ENV CA_PATH=
+ENV SASL_MECHANISM=
+ENV SASL_USERNAME=
+ENV SASL_PASSWORD=
