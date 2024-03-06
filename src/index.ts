@@ -20,6 +20,7 @@ import logger from './grafana/loki';
 import { socketIO } from './service/socketio';
 import { StartKafka } from './kafka';
 import GroupConversationRouter from './routes/group';
+import FileRouter from './routes/file-upload';
 
 
 env.config();
@@ -67,6 +68,7 @@ app.use("/auth", AuthRouter)
 app.use("/PrivateMessage", PrivateChatMessageRoute)
 app.use("/groupConversation", GroupConversationRouter)
 app.use("/status", statusRouter)
+app.use('/file', FileRouter)
 // app.use("/graphql", expressMiddleware(server));
 
 

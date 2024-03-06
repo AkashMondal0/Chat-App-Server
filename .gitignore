@@ -41,3 +41,5 @@ next-env.d.ts
 /data
 
 src/kafka/ca.pem
+
+/storage
