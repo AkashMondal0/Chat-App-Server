@@ -5,6 +5,7 @@ import { PrivateMessageSeen, privateMessage } from "../routes/private/chat"
 
 const saveMessageInDB = async (message: privateMessage) => {
     try {
+        // console.log(message)
         await PrivateMessage.create(message)
 
     } catch (error) {

@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const mongodbConnection = () => {
-    mongoose.connect(process.env.MONGODB_URI as string, {
+    mongoose.connect(process.env.MONGO_URI as string, {
         // @ts-ignore
         useNewUrlParser: true,
         useUnifiedTopology: true,

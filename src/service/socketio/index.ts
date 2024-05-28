@@ -1,7 +1,8 @@
 import { Server } from "socket.io";
 import redisConnection from "../../db/redis-connection";
 import { findUserSocketId, pub } from "../redis";
-import { produceMessage, produceMessageSeen } from "../../kafka";
+import { saveMessageInDB, saveMessageSeenInDB } from "../../controller/privateMessage";
+// import { produceMessage, produceMessageSeen } from "../../kafka";
 
 export const socketIO = new Server({
     cors: {
@@ -62,7 +63,8 @@ socketIO.on('connection', (socket) => {
         if (userSocketId) {
             pub.publish("message", stringify);
         }
-        produceMessage(stringify)
+        // produceMessage(stringify)
+        await saveMessageInDB(_data)
     });
 
     socket.on('message_seen_sender', async (_data) => {
@@ -75,7 +77,8 @@ socketIO.on('connection', (socket) => {
                 }
                 pub.publish("message_seen", JSON.stringify(data));
             }
-            produceMessageSeen(JSON.stringify(_data))
+            await saveMessageSeenInDB(_data)
+            // produceMessageSeen(JSON.stringify(_data))
         } else {
             const { receiverIds } = _data
             receiverIds.forEach(async (receiverId: string) => {
@@ -176,8 +179,8 @@ socketIO.on('connection', (socket) => {
             }
         })
 
-        produceMessage(JSON.stringify(_data))
-
+        // produceMessage(JSON.stringify(_data))
+        await saveMessageInDB(_data)
     });
 
     socket.on('group_message_seen_sender', async (_data) => {
@@ -193,8 +196,8 @@ socketIO.on('connection', (socket) => {
                 socket.to(userSocketId).emit('group_message_seen_receiver', data);
             }
         })
-
-        produceMessageSeen(JSON.stringify(_data))
+        await saveMessageSeenInDB(_data)
+        // produceMessageSeen(JSON.stringify(_data))
     });
 
     // sketch game --------------------------------------

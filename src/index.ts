@@ -4,8 +4,8 @@
 import cors from 'cors';
 import express from 'express';
 import env from 'dotenv';
-import helmet from 'helmet';
-import morgan from 'morgan';
+// import helmet from 'helmet';
+// import morgan from 'morgan';
 import { createServer } from 'http';
 import mongodbConnection from './db/mongo-connection';
 import userRouter from './routes/user';
@@ -14,12 +14,13 @@ import AuthRouter from './routes/auth';
 import PrivateChatMessageRoute from './routes/private/chat';
 import statusRouter from './routes/status';
 import profileRouter from './routes/profile';
-import responseTime from 'response-time';
-import { client, httpRequestDurationMicroseconds, totalRequestCounter } from './grafana/prometheus';
-import logger from './grafana/loki';
+// import responseTime from 'response-time';
+// import { client, httpRequestDurationMicroseconds, totalRequestCounter } from './grafana/prometheus';
+// import logger from './grafana/loki';
 import { socketIO } from './service/socketio';
-import { StartKafka } from './kafka';
+// import { StartKafka } from './kafka';
 import GroupConversationRouter from './routes/group';
+import { CronJob } from 'cron';
 
 
 env.config();
@@ -33,19 +34,19 @@ export const httpServer = createServer(app);
 
 
 
-app.use(responseTime((req, res, time) => {
-  httpRequestDurationMicroseconds
-    .labels({
-      method: req.method,
-      route: req.url,
-      statusCode: res.statusCode
-    }).observe(time);
-  totalRequestCounter.inc({
-    method: req.method,
-    route: req.url,
-    statusCode: res.statusCode
-  });
-}))
+// app.use(responseTime((req, res, time) => {
+//   httpRequestDurationMicroseconds
+//     .labels({
+//       method: req.method,
+//       route: req.url,
+//       statusCode: res.statusCode
+//     }).observe(time);
+//   totalRequestCounter.inc({
+//     method: req.method,
+//     route: req.url,
+//     statusCode: res.statusCode
+//   });
+// }))
 app.use(cors());
 app.use(express.json());
 // app.use(helmet({
@@ -73,7 +74,7 @@ app.use("/status", statusRouter)
 // start service
 mongodbConnection()
 socketIO.listen(httpServer)
-StartKafka()
+// StartKafka()
 // await server.start();
 
 
@@ -81,14 +82,25 @@ app.get('/', (req, res) => {
   res.send(`Welcome to ${APP_NAME} ${APP_VERSION}`);
 })
 
-
-app.get('/metrics', async (req, res) => {
-  res.setHeader('Content-Type', client.register.contentType);
-  const metrics = await client.register.metrics();
-  res.send(metrics);
+app.get('/checkServer', (req, res) => {
+  console.log('checkServer hit💘💘💘💘💘')
+  res.json({
+    code: 1,
+    status: 'success',
+  })
 })
+
+setInterval(() => {
+  fetch('http://localhost:4000/checkServer')
+}, 840000) // 14 minutes
+
+// app.get('/metrics', async (req, res) => {
+//   res.setHeader('Content-Type', client.register.contentType);
+//   const metrics = await client.register.metrics();
+//   res.send(metrics);
+// })
 
 
 httpServer.listen({ port: PORT }, () => {
-  console.log(`🚀 Server ready at http://localhost:4000`)
+  console.log(`🚀 Server ready at http://localhost:${PORT}`)
 });
